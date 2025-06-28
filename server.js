@@ -40,7 +40,7 @@ app.get("/share/event/:id/:slug", async (req, res) => {
         <meta property="og:description" content="For more Islamic Events, Articles, and Books visit Minaramasjid.com">
         <meta property="og:image" content="${imageUrl}">
         <meta property="og:url" content="${redirectUrl}">
-        <meta property="og:type" content="website">
+
 
         <!-- Twitter -->
         <meta name="twitter:card" content="summary_large_image">
