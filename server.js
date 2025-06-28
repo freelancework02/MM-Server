@@ -30,11 +30,14 @@ app.get("/share/event/:id", async (req, res) => {
         <meta name="twitter:title" content="${title}" />
         <meta name="twitter:description" content="For more Islamic Events, Articles, and Books visit Minaramasjid.com" />
         <meta name="twitter:image" content="${imageUrl}" />
-
-        <meta http-equiv="refresh" content="1;url=${redirectUrl}" />
       </head>
       <body>
         <p>Redirecting to the event page...</p>
+        <script>
+          setTimeout(() => {
+            window.location.href = "${redirectUrl}";
+          }, 2000);
+        </script>
       </body>
       </html>
     `;
