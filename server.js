@@ -1,13 +1,18 @@
 const express = require("express");
-const fetch = require("node-fetch");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Use native fetch (Node.js v18+)
 app.get("/share/event/:id", async (req, res) => {
   const { id } = req.params;
+
   try {
     const response = await fetch(`https://api.minaramasjid.com/api/events/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch event data");
+    }
+
     const event = await response.json();
     const title = event.title || "Islamic Event";
     const encodedTitle = encodeURIComponent(title);
@@ -25,7 +30,6 @@ app.get("/share/event/:id", async (req, res) => {
         <meta property="og:image" content="${imageUrl}" />
         <meta property="og:url" content="${redirectUrl}" />
         <meta property="og:type" content="website" />
-
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="${title}" />
         <meta name="twitter:description" content="For more Islamic Events, Articles, and Books visit Minaramasjid.com" />
@@ -42,13 +46,14 @@ app.get("/share/event/:id", async (req, res) => {
       </html>
     `;
 
+    console.log("🔎 Event Fetched:", event);
     res.send(html);
-  } catch (err) {
-    console.error("Error fetching event data:", err);
+  } catch (error) {
+    console.error("❌ Error loading event:", error);
     res.status(500).send("Error loading event");
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });
