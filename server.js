@@ -21,7 +21,7 @@ app.get("/share/:type/:id/:slug", async (req, res) => {
 
   // Configure endpoints by type
   switch (type) {
-    case "event":
+    case "newsandevent":
       apiUrl = `https://api.minaramasjid.com/api/events/${id}`;
       imageUrl = `https://api.minaramasjid.com/api/events/image/${id}`;
       redirectBase = `https://minaramasjid-eight.vercel.app/newsandevent/${id}`;
