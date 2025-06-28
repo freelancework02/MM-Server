@@ -1,8 +1,9 @@
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 5000;
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args)); // for Node 18+
 
-// Escape HTML for safe rendering
+// Escape HTML to prevent XSS
 function escapeHtml(str) {
   return str.replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -10,59 +11,87 @@ function escapeHtml(str) {
             .replace(/"/g, "&quot;");
 }
 
-// Route with ID and readable title slug
-app.get("/share/event/:id/:slug", async (req, res) => {
-  const { id } = req.params;
+// Route pattern: /share/:type/:id/:slug
+app.get("/share/:type/:id/:slug", async (req, res) => {
+  const { type, id } = req.params;
+  let apiUrl = "";
+  let imageUrl = "";
+  let redirectBase = "";
+  let defaultTitle = "Islamic Content";
+
+  // Configure endpoints by type
+  switch (type) {
+    case "event":
+      apiUrl = `https://api.minaramasjid.com/api/events/${id}`;
+      imageUrl = `https://api.minaramasjid.com/api/events/image/${id}`;
+      redirectBase = `https://minaramasjid-eight.vercel.app/newsandevent/${id}`;
+      defaultTitle = "Islamic Event";
+      break;
+
+    case "article":
+      apiUrl = `https://api.minaramasjid.com/api/articles/${id}`;
+      imageUrl = `https://api.minaramasjid.com/api/articles/image/${id}`;
+      redirectBase = `https://minaramasjid-eight.vercel.app/detailarticle/${id}`;
+      defaultTitle = "Islamic Article";
+      break;
+
+    case "book":
+      apiUrl = `https://api.minaramasjid.com/api/books/${id}`;
+      imageUrl = `https://api.minaramasjid.com/api/books/cover/${id}`;
+      redirectBase = `https://minaramasjid-eight.vercel.app/book/${id}`;
+      defaultTitle = "Islamic Book";
+      break;
+
+    default:
+      return res.status(404).send("Unknown content type.");
+  }
 
   try {
-    const response = await fetch(`https://api.minaramasjid.com/api/events/${id}`);
-    if (!response.ok) throw new Error("Failed to fetch event data");
+    const response = await fetch(apiUrl);
+    if (!response.ok) throw new Error("Failed to fetch content");
 
-    const event = await response.json();
-    const title = event.title || "Islamic Event";
-    const safeTitle = escapeHtml(title);
-    const encodedTitle = encodeURIComponent(title);
-    const imageUrl = `https://api.minaramasjid.com/api/events/image/${id}`;
-    const redirectUrl = `https://minaramasjid-eight.vercel.app/newsandevent/${id}/${encodedTitle}`;
+    const data = await response.json();
+    const title = escapeHtml(data.title || defaultTitle);
+    const description = escapeHtml(data.description || `Explore this ${type} on Minaramasjid.com`);
+    const redirectUrl = `${redirectBase}/${encodeURIComponent(data.title || "content")}`;
 
-    // Set response type
     res.setHeader("Content-Type", "text/html");
-
     res.send(`
       <!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="utf-8">
-        <title>${safeTitle}</title>
+        <title>${title}</title>
 
-        <!-- Open Graph -->
-        <meta property="og:title" content="${safeTitle}">
-        <meta property="og:description" content="For more Islamic Events, Articles, and Books visit Minaramasjid.com">
+        <!-- Open Graph Meta -->
+        <meta property="og:type" content="website">
+        <meta property="og:title" content="${title}">
+        <meta property="og:description" content="${description}">
         <meta property="og:image" content="${imageUrl}">
         <meta property="og:url" content="${redirectUrl}">
+        <meta property="og:site_name" content="Minaramasjid">
 
-
-        <!-- Twitter -->
+        <!-- Twitter Meta -->
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="${safeTitle}">
-        <meta name="twitter:description" content="For more Islamic Events, Articles, and Books visit Minaramasjid.com">
+        <meta name="twitter:title" content="${title}">
+        <meta name="twitter:description" content="${description}">
         <meta name="twitter:image" content="${imageUrl}">
 
-        <!-- Safe redirect -->
+        <!-- Safe Redirect -->
         <noscript><meta http-equiv="refresh" content="3;url=${redirectUrl}"></noscript>
       </head>
       <body>
-        <p>Redirecting…</p>
+        <p>Redirecting to ${type}…</p>
         <script>setTimeout(() => window.location.href='${redirectUrl}', 3000)</script>
       </body>
       </html>
     `);
   } catch (error) {
-    console.error("❌ Error loading event:", error);
-    res.status(500).send("Error loading event");
+    console.error("❌ Error:", error);
+    res.status(500).send("Error fetching content.");
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
+  console.log(`✅ SEO Redirect Server running on http://localhost:${PORT}`);
 });
