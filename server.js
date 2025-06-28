@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Optional: Escape function for HTML
+// Escape HTML for safe rendering
 function escapeHtml(str) {
   return str.replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -10,7 +10,8 @@ function escapeHtml(str) {
             .replace(/"/g, "&quot;");
 }
 
-app.get("/share/event/:id", async (req, res) => {
+// Route with ID and readable title slug
+app.get("/share/event/:id/:slug", async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -24,7 +25,7 @@ app.get("/share/event/:id", async (req, res) => {
     const imageUrl = `https://api.minaramasjid.com/api/events/image/${id}`;
     const redirectUrl = `https://minaramasjid-eight.vercel.app/newsandevent/${id}/${encodedTitle}`;
 
-    // Set correct content type
+    // Set response type
     res.setHeader("Content-Type", "text/html");
 
     res.send(`
